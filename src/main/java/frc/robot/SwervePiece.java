@@ -51,7 +51,7 @@ public class SwervePiece {
         Logger.getGlobal().log(Level.INFO, "RAW: " + turningEncoder.getPosition() + '\n' + "MODED: " + turningMotorPos + '\n' + "CONTROLLER: " + desiredPosition);
 
         if(positionDistanceFromDesired > 0.025) { //if we are close enough to the desired position, adjustments will be too sensitive
-            double turnSpeed = positionDistanceFromDesired/(FULL_REVOLUTION/4)/16; //the turnSpeed decreases when closer to the desiredPosition to prevent overshooting
+            double turnSpeed = positionDistanceFromDesired/(FULL_REVOLUTION/4); //the turnSpeed decreases when closer to the desiredPosition to prevent overshooting
             if(positionDistanceFromDesired < 0.2) turnSpeed /= 2*(0.2/positionDistanceFromDesired); //slow down when close to target to prevent overshooting(lol use pid next time)
 
 
@@ -67,7 +67,8 @@ public class SwervePiece {
             turningMotor.set(0);
         }
 
-//        driveMotor.set(yPull);
+        if(positionDistanceFromDesired < 0.5) driveMotor.set(Math.max(xPull, yPull));
+        else driveMotor.set(0);
     }
     /**
      * @return angle in negative degrees (0 - 359.99)
