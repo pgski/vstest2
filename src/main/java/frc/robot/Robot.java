@@ -5,18 +5,8 @@
 
 package frc.robot;
 
-import com.revrobotics.CANSparkLowLevel;
-import com.revrobotics.CANSparkMax;
-import edu.wpi.first.hal.AccelerometerJNI;
-import edu.wpi.first.hal.HAL;
-import edu.wpi.first.hal.JNIWrapper;
-import edu.wpi.first.hal.simulation.AccelerometerDataJNI;
-import edu.wpi.first.wpilibj.AnalogAccelerometer;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
-import org.jetbrains.annotations.Contract;
-
-import javax.swing.*;
 
 
 /**
@@ -38,11 +28,12 @@ public class Robot extends TimedRobot
 //    private final SlewRateLimiter m_xspeedLimiter = new SlewRateLimiter(3);
 //    private final SlewRateLimiter m_yspeedLimiter = new SlewRateLimiter(3);
 //    private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
-    private final CANSparkMax firstMotor = new CANSparkMax(1, CANSparkLowLevel.MotorType.kBrushless);
-    private final CANSparkMax secondMotor = new CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushless);
-    private final CANSparkMax thirdMotor = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushless);
+//    private final CANSparkMax firstMotor = new CANSparkMax(1, CANSparkLowLevel.MotorType.kBrushless);
+//    private final CANSparkMax secondMotor = new CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushless);
+//    private final CANSparkMax thirdMotor = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushless);
 //    private final DifferentialDrive robotDrive = new DifferentialDrive(firstMotor, secondMotor);
-    private final Joystick stick = new Joystick(0);
+    private final DriveTrain train = new DriveTrain();
+    private static final Joystick stick = new Joystick(0);
 
     public static byte SHOOT_STICK = 1;
     public static byte PULL_STICK = 5;
@@ -118,33 +109,41 @@ public class Robot extends TimedRobot
     public void teleopPeriodic() {
 //        robotDrive.arcadeDrive(stick.getY(), stick.getX());
 //        driveWithJoystick(true);
-        updateSuckOrPull();
+
+//        updateSuckOrPull();
+        train.drive(getStickAxisWithDeadZone(0, 0.05), getStickAxisWithDeadZone(1, 0.05));
     }
-    public void updateSuckOrPull(){
-        double direction = stick.getRawAxis(SHOOT_STICK), speed;
-        if(Math.abs(direction) > 0.1){
-            firstMotor.set(direction);
-            secondMotor.set(direction);
-        } else {
-            firstMotor.set(0);
-            secondMotor.set(0);
-        }
-
-
-        direction = stick.getRawAxis(PULL_STICK);
-        if(Math.abs(direction) > 0.1){
-            thirdMotor.set(direction);
-        } else {
-            thirdMotor.set(0);
-        }
-//        new AnalogAccelerometer(5);
-
+    public static double getStickAxisWithDeadZone(int channelId, double deadZone){
+        double axisInput = stick.getRawAxis(channelId);
+        if(Math.abs(axisInput) < deadZone) return 0;
+        else return axisInput;
+    }
+    public static double lerp(double min, double max, double delta) {
+        return min + delta * (max - min);
     }
     public static double clamp(double val, double min, double max) {
         return Math.max(min, Math.min(max, val));
     }
-    
-    
+
+//    public void updateSuckOrPull(){
+//        double direction = stick.getRawAxis(SHOOT_STICK), speed;
+//        if(Math.abs(direction) > 0.1){
+//            firstMotor.set(direction);
+//            secondMotor.set(direction);
+//        } else {
+//            firstMotor.set(0);
+//            secondMotor.set(0);
+//        }
+//
+//        direction = stick.getRawAxis(PULL_STICK);
+//        if(Math.abs(direction) > 0.1){
+//            thirdMotor.set(direction);
+//        } else {
+//            thirdMotor.set(0);
+//        }
+////        new AnalogAccelerometer(5);
+//    }
+
     /** This method is called once when the robot is disabled. */
     @Override
     public void disabledInit() {}
@@ -152,9 +151,7 @@ public class Robot extends TimedRobot
     
     /** This method is called periodically when disabled. */
     @Override
-    public void disabledPeriodic(
-    ) {
-    }
+    public void disabledPeriodic() {}
     
     
     /** This method is called once when test mode is enabled. */
@@ -175,29 +172,4 @@ public class Robot extends TimedRobot
     /** This method is called periodically whilst in simulation. */
     @Override
     public void simulationPeriodic() {}
-
-//    private void driveWithJoystick(boolean fieldRelative) {
-//        // Get the x speed. We are inverting this because Xbox controllers return
-//        // negative values when we push forward.
-//        final var xSpeed =
-//                -m_xspeedLimiter.calculate(MathUtil.applyDeadband(m_controller.getLeftY(), 0.02))
-//                        * Drivetrain.kMaxSpeed;
-//
-//        // Get the y speed or sideways/strafe speed. We are inverting this because
-//        // we want a positive value when we pull to the left. Xbox controllers
-//        // return positive values when you pull to the right by default.
-//        final var ySpeed =
-//                -m_yspeedLimiter.calculate(MathUtil.applyDeadband(m_controller.getLeftX(), 0.02))
-//                        * Drivetrain.kMaxSpeed;
-//
-//        // Get the rate of angular rotation. We are inverting this because we want a
-//        // positive value when we pull to the left (remember, CCW is positive in
-//        // mathematics). Xbox controllers return positive values when you pull to
-//        // the right by default.
-//        final var rot =
-//                -m_rotLimiter.calculate(MathUtil.applyDeadband(m_controller.getRightX(), 0.02))
-//                        * Drivetrain.kMaxAngularSpeed;
-//
-//        m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative, getPeriod());
-//    }
 }
