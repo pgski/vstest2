@@ -41,10 +41,10 @@ public class SwervePiece {
         double positionDistanceFromDesired = Math.abs(turningMotorPos-desiredPosition); //distance the controller position and motor position is
         double distanceCounterClockwise = FULL_REVOLUTION - positionDistanceFromDesired;
 
-        byte rotationDirection = -1;
+        byte rotationDirection = 1;
         if(distanceCounterClockwise < positionDistanceFromDesired){
             positionDistanceFromDesired = distanceCounterClockwise;
-            rotationDirection = 1;
+            rotationDirection = -1;
         }
 //        Logger.getGlobal().log(Level.INFO, positionDistanceFromDesired + " | " + distanceCounterClockwise);
 
@@ -58,11 +58,11 @@ public class SwervePiece {
 //            if( < positionDistanceFromDesired){ //if rotating counterclockwise is closer to 0
 //                turningMotor.set(-turnSpeed);
 //            } else {
-            turningMotor.set(turnSpeed * rotationDirection);
+//            turningMotor.set(turnSpeed * rotationDirection);
 //            }
-//            if (turningMotorPos > desiredPosition) turningMotor.set(-turnSpeed); //original: -0.2
-//            else if (turningMotorPos < desiredPosition) turningMotor.set(turnSpeed); //original: 0.2
-//            else turningMotor.set(0);
+            if (turningMotorPos > desiredPosition) turningMotor.set(-turnSpeed*rotationDirection); //original: -0.2
+            else if (turningMotorPos < desiredPosition) turningMotor.set(turnSpeed*rotationDirection); //original: 0.2
+            else turningMotor.set(0);
         } else {
             turningMotor.set(0);
         }
