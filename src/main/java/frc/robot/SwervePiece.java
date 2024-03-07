@@ -1,6 +1,7 @@
 package frc.robot;
 
 
+import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.RelativeEncoder;
@@ -48,7 +49,7 @@ public class SwervePiece {
         }
 //        Logger.getGlobal().log(Level.INFO, positionDistanceFromDesired + " | " + distanceCounterClockwise);
 
-        Logger.getGlobal().log(Level.INFO, "RAW: " + turningEncoder.getPosition() + '\n' + "MODED: " + turningMotorPos + '\n' + "CONTROLLER: " + desiredPosition);
+//        Logger.getGlobal().log(Level.INFO, "RAW: " + turningEncoder.getPosition() + '\n' + "MODED: " + turningMotorPos + '\n' + "CONTROLLER: " + desiredPosition);
 
         if(positionDistanceFromDesired > 0.025) { //if we are close enough to the desired position, adjustments will be too sensitive
             double turnSpeed = positionDistanceFromDesired/(FULL_REVOLUTION/4); //the turnSpeed decreases when closer to the desiredPosition to prevent overshooting
@@ -67,8 +68,13 @@ public class SwervePiece {
             turningMotor.set(0);
         }
 
-        if(positionDistanceFromDesired < 0.5) driveMotor.set(Math.max(xPull, yPull));
-        else driveMotor.set(0);
+        if(positionDistanceFromDesired < 0.5){
+            driveMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
+            driveMotor.set(Math.max(Math.abs(xPull)/25, Math.abs(yPull)/25));
+        } else {
+            driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+            driveMotor.set(0);
+        }
     }
     /**
      * @return angle in negative degrees (0 - 359.99)
@@ -78,7 +84,10 @@ public class SwervePiece {
         if(degreesRotation > 0){
             return -360+degreesRotation;
         }
-        return degreesRotation;
+
+        Logger.getGlobal().log(Level.INFO, String.valueOf(degreesRotation));
+
+        return (degreesRotation-90)%360;
     }
 }
 

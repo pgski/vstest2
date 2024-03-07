@@ -111,7 +111,7 @@ public class Robot extends TimedRobot
 //        driveWithJoystick(true);
 
 //        updateSuckOrPull();
-        train.drive(getStickAxisWithDeadZone(0, 0.05), getStickAxisWithDeadZone(1, 0.05));
+        train.drive(getStickAxisWithDeadZone(0, 0.075), getStickAxisWithDeadZone(1, 0.075));
     }
     public static double getStickAxisWithDeadZone(int channelId, double deadZone){
         double axisInput = stick.getRawAxis(channelId);
@@ -151,7 +151,9 @@ public class Robot extends TimedRobot
     
     /** This method is called periodically when disabled. */
     @Override
-    public void disabledPeriodic() {}
+    public void disabledPeriodic() {
+        train.drive(0,0);
+    }
     
     
     /** This method is called once when test mode is enabled. */
