@@ -5,6 +5,9 @@
 
 package frc.robot;
 
+import com.revrobotics.CANSparkBase;
+import com.revrobotics.CANSparkMax;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 
@@ -33,10 +36,20 @@ public class Robot extends TimedRobot
 //    private final CANSparkMax thirdMotor = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushless);
 //    private final DifferentialDrive robotDrive = new DifferentialDrive(firstMotor, secondMotor);
     private final DriveTrain train = new DriveTrain();
-    private static final Joystick stick = new Joystick(0);
+    private static final Joystick rockCandyStick = new Joystick(0);
+    private static final Joystick thrustMaster69Stick = new Joystick(1);
+//    private static final AnalogGyro gyro = new AnalogGyro(0);
+    public static final CANSparkMax liftMotor1 = new CANSparkMax(11, CANSparkMax.MotorType.kBrushless);
+    public static final CANSparkMax suckMotor = new CANSparkMax(13, CANSparkBase.MotorType.kBrushless);
+    public static final CANSparkMax shootMotor1 = new CANSparkMax(14, CANSparkBase.MotorType.kBrushless);
+    public static final CANSparkMax shootMotor2 = new CANSparkMax(15, CANSparkBase.MotorType.kBrushless);
+    public static DigitalInput tooFarForward = new DigitalInput(0);
+    public static DigitalInput tooFarBack = new DigitalInput(1);
 
-    public static byte SHOOT_STICK = 1;
-    public static byte PULL_STICK = 5;
+    static {
+        shootMotor1.setInverted(true);
+    }
+
     /**
      * This method is run when the robot is first started up and should be used for any
      * initialization code.
@@ -78,8 +91,7 @@ public class Robot extends TimedRobot
 //        // autoSelected = SmartDashboard.getString("Auto Selector", DEFAULT_AUTO);
 //        System.out.println("Auto selected: " + autoSelected);
     }
-    
-    
+
     /** This method is called periodically during autonomous. */
     @Override
     public void autonomousPeriodic()
@@ -102,8 +114,8 @@ public class Robot extends TimedRobot
     /** This method is called once when teleop is enabled. */
     @Override
     public void teleopInit() {}
-    
-    
+
+
     /** This method is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
@@ -111,9 +123,58 @@ public class Robot extends TimedRobot
 //        driveWithJoystick(true);
 
 //        updateSuckOrPull();
-        train.drive(getStickAxisWithDeadZone(0, 0.075), getStickAxisWithDeadZone(1, 0.075));
+
+        double x_turningAxis = getStickAxisWithDeadZone(rockCandyStick, 4, 0.075);
+        double y_turningAxis = getStickAxisWithDeadZone(rockCandyStick, 5, 0.075);
+        if(Math.abs(x_turningAxis)+Math.abs(y_turningAxis) > 0) train.turn(x_turningAxis, y_turningAxis);
+        else train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075));
+
+        handleLiftingAndLowering();
+        handleGrabbingAndShooting();
     }
-    public static double getStickAxisWithDeadZone(int channelId, double deadZone){
+    public void handleLiftingAndLowering(){
+//        double x_liftAxis = getStickAxisWithDeadZone(rockCandyStick, 0, 0.075);
+        final float MAX_ROTATION_SPEED = 0.1F;
+        double y_liftAxis = -getStickAxisWithDeadZone(rockCandyStick, 1, 0.075)*MAX_ROTATION_SPEED;
+
+
+//        boolean canPushToGround = y_liftAxis < 0 && liftMotor1Encoder.getPosition() > -4.5 && liftMotor2Encoder.getPosition() > -10;
+//        boolean canPullUp = y_liftAxis > 0 && liftMotor1Encoder.getPosition() < -1 && liftMotor2Encoder.getPosition() < -1;
+        if(tooFarForward.get() && y_liftAxis > 0) return;
+        else if (tooFarBack.get() && y_liftAxis < 0) return;
+        if(y_liftAxis == 0) { //stop moving
+            liftMotor1.set(0);
+            liftMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
+        } else {
+            liftMotor1.setIdleMode(CANSparkBase.IdleMode.kCoast);
+            liftMotor1.set(y_liftAxis);
+        }
+    }
+    public void handleGrabbingAndShooting(){
+        double L_trigger = getStickAxisWithDeadZone(rockCandyStick, 2, 0.075);//0.0-1.0
+        double R_trigger = getStickAxisWithDeadZone(rockCandyStick, 3, 0.075);//0.0-1.0
+        if(L_trigger > 0){
+            suckMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
+            suckMotor.set(L_trigger);
+        } else {
+            suckMotor.set(0);
+            suckMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+
+        }
+
+        if(R_trigger > 0){
+            shootMotor1.setIdleMode(CANSparkBase.IdleMode.kCoast);
+            shootMotor2.setIdleMode(CANSparkBase.IdleMode.kCoast);
+            shootMotor1.set(1.0); //always full speed when shooting
+            shootMotor2.set(1.0); //always full speed when shooting
+        } else {
+            shootMotor1.set(0);
+            shootMotor2.set(0);
+            shootMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
+            shootMotor2.setIdleMode(CANSparkBase.IdleMode.kBrake);
+        }
+    }
+    public static double getStickAxisWithDeadZone(Joystick stick, int channelId, double deadZone){
         double axisInput = stick.getRawAxis(channelId);
         if(Math.abs(axisInput) < deadZone) return 0;
         else return axisInput;
@@ -151,9 +212,7 @@ public class Robot extends TimedRobot
     
     /** This method is called periodically when disabled. */
     @Override
-    public void disabledPeriodic() {
-        train.drive(0,0);
-    }
+    public void disabledPeriodic() {}
     
     
     /** This method is called once when test mode is enabled. */

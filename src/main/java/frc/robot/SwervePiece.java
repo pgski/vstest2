@@ -6,9 +6,6 @@ import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.RelativeEncoder;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 public class SwervePiece {
     public final CANSparkFlex driveMotor;
     public final CANSparkFlex turningMotor;
@@ -34,10 +31,8 @@ public class SwervePiece {
      * @param xPull Controller x direction pull
      * @param yPull Controller y direction pull
      */
-    public void update(double xPull, double yPull) {
+    public void update(double xPull, double yPull, double desiredPosition) {
         double turningMotorPos = turningEncoder.getPosition()%FULL_REVOLUTION; //the current position of the wheel turning motor
-        double desiredPosition = (getDesiredPosition(xPull, yPull)/360D)*FULL_REVOLUTION;//(xPull < 0 ? xPull*(FULL_REVOLUTION/4) : xPull*(FULL_REVOLUTION)) + (yPull > 0 ? yPull*(FULL_REVOLUTION/2) : 0); //the position the controller wants the motor to be in
-//        Logger.getGlobal().log(Level.INFO, String.valueOf(desiredPosition));
 
         double positionDistanceFromDesired = Math.abs(turningMotorPos-desiredPosition); //distance the controller position and motor position is
         double distanceCounterClockwise = FULL_REVOLUTION - positionDistanceFromDesired;
@@ -47,8 +42,6 @@ public class SwervePiece {
             positionDistanceFromDesired = distanceCounterClockwise;
             rotationDirection = -1;
         }
-//        Logger.getGlobal().log(Level.INFO, positionDistanceFromDesired + " | " + distanceCounterClockwise);
-
 //        Logger.getGlobal().log(Level.INFO, "RAW: " + turningEncoder.getPosition() + '\n' + "MODED: " + turningMotorPos + '\n' + "CONTROLLER: " + desiredPosition);
 
         if(positionDistanceFromDesired > 0.025) { //if we are close enough to the desired position, adjustments will be too sensitive
@@ -76,32 +69,4 @@ public class SwervePiece {
             driveMotor.set(0);
         }
     }
-    /**
-     * @return angle in negative degrees (0 - 359.99)
-    */
-    public static double getDesiredPosition(double xPull, double yPull){
-        double degreesRotation = (Math.atan2(yPull, xPull) * 180) / Math.PI;
-        if(degreesRotation > 0){
-            return -360+degreesRotation;
-        }
-
-        Logger.getGlobal().log(Level.INFO, String.valueOf(degreesRotation));
-
-        return (degreesRotation-90)%360;
-    }
 }
-
-
-//        if(yPull < 0){ //top half
-//            if(xPull < 0) { //quadrant II
-//                return xPull*(FULL_REVOLUTION*0.25);
-//            } else { //quadrant I
-//                return (Math.max(yPull-xPull, 0)*(FULL_REVOLUTION)) + (xPull * (FULL_REVOLUTION*0.75));
-//            }
-//        } else {
-//            if(xPull < 0){ //quadrant III
-//                return ((yPull < 1) ? (Math.min(xPull+yPull, 0)*(FULL_REVOLUTION*0.25)) : 0) + (-yPull * (FULL_REVOLUTION*0.5));
-//            } else { //quadrant IV
-//                return (-yPull * (FULL_REVOLUTION*0.5)) + (xPull < 1 ? (Math.max(yPull-xPull, 0)*(FULL_REVOLUTION*0.75)) : 0);
-//            }
-//        }
