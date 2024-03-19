@@ -124,13 +124,14 @@ public class Robot extends TimedRobot
 
 //        updateSuckOrPull();
 
-        double x_turningAxis = getStickAxisWithDeadZone(rockCandyStick, 4, 0.075);
-        double y_turningAxis = getStickAxisWithDeadZone(rockCandyStick, 5, 0.075);
-        if(Math.abs(x_turningAxis)+Math.abs(y_turningAxis) > 0) train.turn(x_turningAxis, y_turningAxis);
-        else train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075));
+//        double x_turningAxis = getStickAxisWithDeadZone(rockCandyStick, 4, 0.075);
+//        double y_turningAxis = getStickAxisWithDeadZone(rockCandyStick, 5, 0.075);
+//        if(Math.abs(x_turningAxis)+Math.abs(y_turningAxis) > 0) train.turn(x_turningAxis, y_turningAxis);
+//        else
+            train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075));
 
-        handleLiftingAndLowering();
-        handleGrabbingAndShooting();
+//        handleLiftingAndLowering();
+//        handleGrabbingAndShooting();
     }
     public void handleLiftingAndLowering(){
 //        double x_liftAxis = getStickAxisWithDeadZone(rockCandyStick, 0, 0.075);

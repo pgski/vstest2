@@ -6,6 +6,9 @@ import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.RelativeEncoder;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class SwervePiece {
     public final CANSparkFlex driveMotor;
     public final CANSparkFlex turningMotor;
@@ -42,21 +45,22 @@ public class SwervePiece {
             positionDistanceFromDesired = distanceCounterClockwise;
             rotationDirection = -1;
         }
-//        Logger.getGlobal().log(Level.INFO, "RAW: " + turningEncoder.getPosition() + '\n' + "MODED: " + turningMotorPos + '\n' + "CONTROLLER: " + desiredPosition);
+        Logger.getGlobal().log(Level.INFO, "RAW: " + turningEncoder.getPosition() + '\n' + "MODED: " + turningMotorPos);
 
         if(positionDistanceFromDesired > 0.025) { //if we are close enough to the desired position, adjustments will be too sensitive
             double turnSpeed = positionDistanceFromDesired/(FULL_REVOLUTION/4); //the turnSpeed decreases when closer to the desiredPosition to prevent overshooting
             if(positionDistanceFromDesired < 0.2) turnSpeed /= 2*(0.2/positionDistanceFromDesired); //slow down when close to target to prevent overshooting(lol use pid next time)
 
 
-//            if( < positionDistanceFromDesired){ //if rotating counterclockwise is closer to 0
-//                turningMotor.set(-turnSpeed);
-//            } else {
-//            turningMotor.set(turnSpeed * rotationDirection);
-//            }
-            if (turningMotorPos > desiredPosition) turningMotor.set(-turnSpeed*rotationDirection); //original: -0.2
-            else if (turningMotorPos < desiredPosition) turningMotor.set(turnSpeed*rotationDirection); //original: 0.2
-            else turningMotor.set(0);
+            if(turningMotorPos < desiredPosition){ //if rotating counterclockwise is closer to 0
+                turningMotor.set(-turnSpeed);
+            } else {
+                turningMotor.set(turnSpeed);
+            }
+//            if (turningMotorPos > desiredPosition) turningMotor.set(-turnSpeed*rotationDirection); //original: -0.2
+//            else if (turningMotorPos < desiredPosition) turningMotor.set(turnSpeed*rotationDirection); //original: 0.2
+//            else turningMotor.set(0);
+//            Logger.getGlobal().log(Level.INFO, "VELOCITY: " + turningEncoder.getVelocity());
         } else {
             turningMotor.set(0);
         }
@@ -64,8 +68,9 @@ public class SwervePiece {
         if(positionDistanceFromDesired < 0.5){
             driveMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
             driveMotor.set(Math.max(Math.abs(xPull)/25, Math.abs(yPull)/25));
-        } else {
-            driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+        }
+        else {
+//            driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
             driveMotor.set(0);
         }
     }

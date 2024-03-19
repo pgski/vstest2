@@ -28,11 +28,12 @@ public class DriveTrain {
      */
     public void drive(double xPull, double yPull) {
         double desiredPosition = (getDesiredPosition(xPull, yPull)/360D)*FULL_REVOLUTION;//(xPull < 0 ? xPull*(FULL_REVOLUTION/4) : xPull*(FULL_REVOLUTION)) + (yPull > 0 ? yPull*(FULL_REVOLUTION/2) : 0); //the position the controller wants the motor to be in
-        for(SwervePiece[] swerveRow : swervePieces)
-            for(SwervePiece swervePiece : swerveRow) {
-                swervePiece.update(xPull, yPull, desiredPosition);
+//        for(SwervePiece[] swerveRow : swervePieces)
+//            for(SwervePiece swervePiece : swerveRow) {
+//                swervePiece.update(xPull, yPull, desiredPosition);
 //                if(swervePiece == swervePieces[1][0]) Logger.getGlobal().log(Level.INFO, String.valueOf(swervePiece.turningEncoder.getPosition()));
-            }
+//            }
+        swervePieces[0][0].update(xPull, yPull, desiredPosition);
     }
     /**
      * Method to turn the robot using joystick info.
@@ -56,11 +57,11 @@ public class DriveTrain {
     public static double getDesiredPosition(double xPull, double yPull){
         double degreesRotation = (Math.atan2(yPull, xPull) * 180) / Math.PI;
         if(degreesRotation > 0){
-            return -360+degreesRotation;
+            degreesRotation -= 360;
         }
 
         Logger.getGlobal().log(Level.INFO, String.valueOf(degreesRotation));
 
-        return (degreesRotation-90)%360;
+        return -(degreesRotation-90)%360;
     }
 }
