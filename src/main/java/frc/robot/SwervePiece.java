@@ -9,10 +9,13 @@ import com.revrobotics.RelativeEncoder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static frc.robot.Robot.clamp;
+
 public class SwervePiece {
     public final CANSparkFlex driveMotor;
     public final CANSparkFlex turningMotor;
     public final RelativeEncoder turningEncoder;
+    public boolean inverted;
 //    public final float MAX_WHEEL_ROTATION = 5.42F;
     public static final float FULL_REVOLUTION = 150F/7F; //original: 21.68F
 
@@ -22,56 +25,59 @@ public class SwervePiece {
      * @param driveMotorChannel PWM output for the drive motor.
      * @param turningMotorChannel PWM output for the turning motor.
      */
-    public SwervePiece(int driveMotorChannel, int turningMotorChannel){
+    public SwervePiece(int driveMotorChannel, int turningMotorChannel, boolean inverted){
         driveMotor = new CANSparkFlex(driveMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
         turningMotor = new CANSparkFlex(turningMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
         turningEncoder = turningMotor.getEncoder();
+        this.inverted = inverted;
     }
 
     /**
      * Updates the SwervePiece's turning motor and driving motor to move in the direction xPull and yPull requests.
      *
-     * @param xPull Controller x direction pull
-     * @param yPull Controller y direction pull
+     * @param drivingSpeed Speed the robot drives
      */
-    public void update(double xPull, double yPull, double desiredPosition) {
-        double turningMotorPos = turningEncoder.getPosition()%FULL_REVOLUTION; //the current position of the wheel turning motor
+    public void update(double desiredPosition, double drivingSpeed) {
+        double turningMotorPos = Math.abs(turningEncoder.getPosition() % FULL_REVOLUTION); //the current position of the wheel turning motor
+        double distanceClockwise = ((turningMotorPos - desiredPosition) + FULL_REVOLUTION) % FULL_REVOLUTION; //distance the controller position and motor position is
+        double distanceCounterClockwise = FULL_REVOLUTION - distanceClockwise;
 
-        double positionDistanceFromDesired = Math.abs(turningMotorPos-desiredPosition); //distance the controller position and motor position is
-        double distanceCounterClockwise = FULL_REVOLUTION - positionDistanceFromDesired;
-
-        byte rotationDirection = 1;
-        if(distanceCounterClockwise < positionDistanceFromDesired){
-            positionDistanceFromDesired = distanceCounterClockwise;
+        double distanceFromDesired; //this is whichever direction will be closest to desired
+        byte rotationDirection; //whether to turn LEFT or RIGHT
+        if (distanceCounterClockwise < distanceClockwise) {
+            distanceFromDesired = distanceCounterClockwise;
             rotationDirection = -1;
+        } else {
+            distanceFromDesired = distanceClockwise;
+            rotationDirection = 1;
         }
-        Logger.getGlobal().log(Level.INFO, "RAW: " + turningEncoder.getPosition() + '\n' + "MODED: " + turningMotorPos);
+        if(inverted) rotationDirection = (byte)-rotationDirection;
 
-        if(positionDistanceFromDesired > 0.025) { //if we are close enough to the desired position, adjustments will be too sensitive
-            double turnSpeed = positionDistanceFromDesired/(FULL_REVOLUTION/4); //the turnSpeed decreases when closer to the desiredPosition to prevent overshooting
-            if(positionDistanceFromDesired < 0.2) turnSpeed /= 2*(0.2/positionDistanceFromDesired); //slow down when close to target to prevent overshooting(lol use pid next time)
+        if (distanceFromDesired > 0.025) { //if we are close enough to the desired position, adjustments will be too sensitive
+            double turnSpeed = (1 * (distanceFromDesired/(FULL_REVOLUTION*0.5))) * rotationDirection; //the turnSpeed decreases when closer to the desiredPosition to prevent overshooting
+            if (distanceFromDesired < 0.2) turnSpeed /= 2 * (0.2 / distanceFromDesired); //slow down when close to target to prevent overshooting(lol use pid next time)
+            Logger.getGlobal().log(Level.INFO, "TURNSPEED: " + turnSpeed + "\nDISTANCE: " + distanceFromDesired);
 
 
-            if(turningMotorPos < desiredPosition){ //if rotating counterclockwise is closer to 0
-                turningMotor.set(-turnSpeed);
-            } else {
-                turningMotor.set(turnSpeed);
-            }
-//            if (turningMotorPos > desiredPosition) turningMotor.set(-turnSpeed*rotationDirection); //original: -0.2
-//            else if (turningMotorPos < desiredPosition) turningMotor.set(turnSpeed*rotationDirection); //original: 0.2
-//            else turningMotor.set(0);
-//            Logger.getGlobal().log(Level.INFO, "VELOCITY: " + turningEncoder.getVelocity());
+            turnSpeed = clamp(turnSpeed, -1, 1);
+
+            turningMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
+            turningMotor.set(turnSpeed);
         } else {
             turningMotor.set(0);
+            turningMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
         }
 
-        if(positionDistanceFromDesired < 0.5){
+        if(distanceFromDesired < 0.5){ //DON'T DRIVE IF THE WHEEL IS FACING THE WRONG DIRECTION
             driveMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
-            driveMotor.set(Math.max(Math.abs(xPull)/25, Math.abs(yPull)/25));
-        }
-        else {
-//            driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+            driveMotor.set(drivingSpeed);
+        } else {
             driveMotor.set(0);
+//            driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
         }
+    }
+
+    public void turn(int rotationDirection, double speed) {
+
     }
 }
