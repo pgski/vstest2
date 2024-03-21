@@ -12,7 +12,7 @@ public class DriveTrain {
     private final SwervePiece frontLeft = new SwervePiece(5, 6, false);
     private final SwervePiece backLeft = new SwervePiece(7, 8, false);
     private final SwervePiece backRight = new SwervePiece(9, 10, false);
-    private final SwervePiece[][] swervePieces = {
+    public final SwervePiece[][] swervePieces = {
             {frontLeft, frontRight},
             {backLeft, backRight}
     };
@@ -27,26 +27,26 @@ public class DriveTrain {
         double desiredPosition = (getDesiredPosition(xPull, yPull)/360D)*FULL_REVOLUTION;//(xPull < 0 ? xPull*(FULL_REVOLUTION/4) : xPull*(FULL_REVOLUTION)) + (yPull > 0 ? yPull*(FULL_REVOLUTION/2) : 0); //the position the controller wants the motor to be in
         double drivingSpeed = (Math.max(Math.abs(xPull), Math.abs(yPull)))*((slow) ? 0.5 : 1);
 
-        for(SwervePiece[] swerveRow : swervePieces)
-            for(SwervePiece swervePiece : swerveRow)
-                swervePiece.update(desiredPosition, drivingSpeed);
+        for(int i = 0, direction = 1; i < swervePieces.length; i++) {
+//            direction = -direction;
+            for (SwervePiece swervePiece : swervePieces[i])
+                swervePiece.update(desiredPosition, drivingSpeed * direction);
+        }
     }
     /**
      * Method to turn the robot using joystick info.
      *
      * @param xPull Speed of the robot in the x direction (sideways).
-     * @param yPull Speed of the robot in the y direction (forward).
      */
-    public void turn(double xPull, double yPull) {
-//        double desiredPosition = (getDesiredPosition(xPull, yPull)/360D)*FULL_REVOLUTION;//(xPull < 0 ? xPull*(FULL_REVOLUTION/4) : xPull*(FULL_REVOLUTION)) + (yPull > 0 ? yPull*(FULL_REVOLUTION/2) : 0); //the position the controller wants the motor to be in
-        int rotationDirection = (xPull > 0) ? (byte)1 : (byte)-1;
-        double drivingSpeed = Math.abs(xPull);
+    public void turn(double xPull, boolean slow) {
+        double desiredRotation = -FULL_REVOLUTION*0.25;
+        double drivingSpeed = xPull * ((slow) ? 0.5 : 1);
         for(SwervePiece swervePiece : swervePieces[0]) {
-            swervePiece.turn(rotationDirection, drivingSpeed);
+            swervePiece.update(desiredRotation, drivingSpeed);
         }
-//        desiredPosition = ((desiredPosition-180)%360); //rotate by 180 degrees. this will make the second set of wheels drive in the opposite direction
+        drivingSpeed = -drivingSpeed;
         for(SwervePiece swervePiece : swervePieces[1]) {
-            swervePiece.turn(-rotationDirection, drivingSpeed);
+            swervePiece.update(desiredRotation, drivingSpeed);
         }
     }
     /**

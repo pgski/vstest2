@@ -1,21 +1,16 @@
 package frc.robot;
 
 
-import com.revrobotics.CANSparkBase;
-import com.revrobotics.CANSparkFlex;
-import com.revrobotics.CANSparkLowLevel;
-import com.revrobotics.RelativeEncoder;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.revrobotics.*;
 
 import static frc.robot.Robot.clamp;
 
 public class SwervePiece {
     public final CANSparkFlex driveMotor;
     public final CANSparkFlex turningMotor;
-    public final RelativeEncoder turningEncoder;
+    public final AbsoluteEncoder turningEncoder;
     public boolean inverted;
+    public int timeWhileFarAwayFromTargetWhileStopped = 0;
 //    public final float MAX_WHEEL_ROTATION = 5.42F;
     public static final float FULL_REVOLUTION = 150F/7F; //original: 21.68F
 
@@ -28,7 +23,7 @@ public class SwervePiece {
     public SwervePiece(int driveMotorChannel, int turningMotorChannel, boolean inverted){
         driveMotor = new CANSparkFlex(driveMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
         turningMotor = new CANSparkFlex(turningMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
-        turningEncoder = turningMotor.getEncoder();
+        turningEncoder = turningMotor.getAbsoluteEncoder();
         this.inverted = inverted;
     }
 
@@ -38,6 +33,7 @@ public class SwervePiece {
      * @param drivingSpeed Speed the robot drives
      */
     public void update(double desiredPosition, double drivingSpeed) {
+        if(inverted) desiredPosition = ((desiredPosition+(FULL_REVOLUTION/2))%FULL_REVOLUTION);
         double turningMotorPos = Math.abs(turningEncoder.getPosition() % FULL_REVOLUTION); //the current position of the wheel turning motor
         double distanceClockwise = ((turningMotorPos - desiredPosition) + FULL_REVOLUTION) % FULL_REVOLUTION; //distance the controller position and motor position is
         double distanceCounterClockwise = FULL_REVOLUTION - distanceClockwise;
@@ -53,13 +49,24 @@ public class SwervePiece {
         }
         if(inverted) rotationDirection = (byte)-rotationDirection;
 
+        if(desiredPosition == 0){
+            if(distanceFromDesired > 5) {
+                ++timeWhileFarAwayFromTargetWhileStopped;
+            }
+        } else {
+            timeWhileFarAwayFromTargetWhileStopped = 0;
+        }
+        if(timeWhileFarAwayFromTargetWhileStopped > 40){ //~2 seconds
+            inverted = !inverted;
+            timeWhileFarAwayFromTargetWhileStopped = 0;
+        }
+
         if (distanceFromDesired > 0.025) { //if we are close enough to the desired position, adjustments will be too sensitive
-            double turnSpeed = (1 * (distanceFromDesired/(FULL_REVOLUTION*0.5))) * rotationDirection; //the turnSpeed decreases when closer to the desiredPosition to prevent overshooting
-            if (distanceFromDesired < 0.2) turnSpeed /= 2 * (0.2 / distanceFromDesired); //slow down when close to target to prevent overshooting(lol use pid next time)
-            Logger.getGlobal().log(Level.INFO, "TURNSPEED: " + turnSpeed + "\nDISTANCE: " + distanceFromDesired);
+            double turnSpeed = (distanceFromDesired/(FULL_REVOLUTION*0.5)) * rotationDirection; //the turnSpeed decreases when closer to the desiredPosition to prevent overshooting
+            if (distanceFromDesired < 0.5) turnSpeed /= 2 * (0.5 / distanceFromDesired); //slow down when close to target to prevent overshooting(lol use pid next time)
+//            Logger.getGlobal().log(Level.INFO, "TURNSPEED: " + turnSpeed + "\nDISTANCE: " + distanceFromDesired);
 
-
-            turnSpeed = clamp(turnSpeed, -1, 1);
+            turnSpeed = clamp(turnSpeed, -0.5, 0.5);
 
             turningMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
             turningMotor.set(turnSpeed);
@@ -70,14 +77,11 @@ public class SwervePiece {
 
         if(distanceFromDesired < 0.5){ //DON'T DRIVE IF THE WHEEL IS FACING THE WRONG DIRECTION
             driveMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
+//            driveMotor.set((inverted) ? -drivingSpeed : -drivingSpeed);
             driveMotor.set(drivingSpeed);
         } else {
             driveMotor.set(0);
 //            driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
         }
-    }
-
-    public void turn(int rotationDirection, double speed) {
-
     }
 }

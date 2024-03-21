@@ -11,6 +11,9 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the methods corresponding to
@@ -94,20 +97,8 @@ public class Robot extends TimedRobot
 
     /** This method is called periodically during autonomous. */
     @Override
-    public void autonomousPeriodic()
-    {
-//        driveWithJoystick(false);
-//        m_swerve.updateOdometry();
-//        switch (autoSelected)
-//        {
-//            case CUSTOM_AUTO:
-//                // Put custom auto code here
-//                break;
-//            case DEFAULT_AUTO:
-//            default:
-//                // Put default auto code here
-//                break;
-//        }
+    public void autonomousPeriodic() {
+        train.drive(0, -0.2, false); //hopefully we don't SLAM INTO A WALL
     }
     
     
@@ -124,32 +115,44 @@ public class Robot extends TimedRobot
 
 //        updateSuckOrPull();
 
-//        double x_turningAxis = getStickAxisWithDeadZone(rockCandyStick, 4, 0.075);
-//        double y_turningAxis = getStickAxisWithDeadZone(rockCandyStick, 5, 0.075);
-//        if(Math.abs(x_turningAxis)+Math.abs(y_turningAxis) > 0) train.turn(x_turningAxis, y_turningAxis);
-//        else{
+        double x_turningAxis = getStickAxisWithDeadZone(thrustMaster69Stick, 5, 0.075); //Z-Rotation
+        if(Math.abs(x_turningAxis) > 0) {
+            Logger.getGlobal().log(Level.INFO, "TURNING: " + Math.abs(x_turningAxis));
+            train.turn(x_turningAxis, thrustMaster69Stick.getRawButton(1));
+        }
+        else{
+            Logger.getGlobal().log(Level.INFO, "DRIVING");
             train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075), thrustMaster69Stick.getRawButton(1));
-//        }
+        }
 
-//        handleLiftingAndLowering();
-//        handleGrabbingAndShooting();
+        handleLiftingAndLowering();
+        handleGrabbingAndShooting();
     }
     public void handleLiftingAndLowering(){
 //        double x_liftAxis = getStickAxisWithDeadZone(rockCandyStick, 0, 0.075);
         final float MAX_ROTATION_SPEED = 0.1F;
-        double y_liftAxis = -getStickAxisWithDeadZone(rockCandyStick, 1, 0.075)*MAX_ROTATION_SPEED;
-
+        double y_liftAxis = -getStickAxisWithDeadZone(rockCandyStick, 1, 0.075);
 
 //        boolean canPushToGround = y_liftAxis < 0 && liftMotor1Encoder.getPosition() > -4.5 && liftMotor2Encoder.getPosition() > -10;
 //        boolean canPullUp = y_liftAxis > 0 && liftMotor1Encoder.getPosition() < -1 && liftMotor2Encoder.getPosition() < -1;
-        if(tooFarForward.get() && y_liftAxis > 0) return;
-        else if (tooFarBack.get() && y_liftAxis < 0) return;
+        if((tooFarForward.get() && y_liftAxis > 0)){
+            Logger.getGlobal().log(Level.WARNING, "TOO FAR FORWARD!");
+            liftMotor1.set(0);
+            liftMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
+            return;
+        }
+        if((tooFarBack.get() && y_liftAxis < 0)){
+            Logger.getGlobal().log(Level.WARNING, "TOO FAR BACKWARD!");
+            liftMotor1.set(0);
+            liftMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
+            return;
+        }
         if(y_liftAxis == 0) { //stop moving
             liftMotor1.set(0);
             liftMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
         } else {
             liftMotor1.setIdleMode(CANSparkBase.IdleMode.kCoast);
-            liftMotor1.set(y_liftAxis);
+            liftMotor1.set(y_liftAxis*MAX_ROTATION_SPEED);
         }
     }
     public void handleGrabbingAndShooting(){
@@ -157,11 +160,9 @@ public class Robot extends TimedRobot
         double R_trigger = getStickAxisWithDeadZone(rockCandyStick, 3, 0.075);//0.0-1.0
         if(L_trigger > 0){
             suckMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
-            suckMotor.set(L_trigger);
+            suckMotor.set(-L_trigger);
         } else {
             suckMotor.set(0);
-            suckMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
-
         }
 
         if(R_trigger > 0){
@@ -172,8 +173,6 @@ public class Robot extends TimedRobot
         } else {
             shootMotor1.set(0);
             shootMotor2.set(0);
-            shootMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
-            shootMotor2.setIdleMode(CANSparkBase.IdleMode.kBrake);
         }
     }
     public static double getStickAxisWithDeadZone(Joystick stick, int channelId, double deadZone){
@@ -224,7 +223,10 @@ public class Robot extends TimedRobot
     
     /** This method is called periodically during test mode. */
     @Override
-    public void testPeriodic() {}
+    public void testPeriodic() {
+        Logger.getGlobal().log(Level.INFO, "TOO_FAR_FORWARD: " + tooFarForward.get());
+        Logger.getGlobal().log(Level.INFO, "TOO_FAR_BACK: " + tooFarBack.get());
+    }
     
     
     /** This method is called once when the robot is first started up. */
