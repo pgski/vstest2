@@ -49,10 +49,6 @@ public class Robot extends TimedRobot
     public static DigitalInput tooFarForward = new DigitalInput(0);
     public static DigitalInput tooFarBack = new DigitalInput(1);
 
-    static {
-        shootMotor1.setInverted(true);
-    }
-
     /**
      * This method is run when the robot is first started up and should be used for any
      * initialization code.
@@ -63,6 +59,8 @@ public class Robot extends TimedRobot
 //        chooser.setDefaultOption("Default Auto", DEFAULT_AUTO);
 //        chooser.addOption("My Auto", CUSTOM_AUTO);
 //        SmartDashboard.putData("Auto choices", chooser);
+        shootMotor1.setInverted(true);
+        suckMotor.setInverted(true);
     }
     
     
@@ -87,18 +85,32 @@ public class Robot extends TimedRobot
      * below with additional strings. If using the SendableChooser, make sure to add them to the
      * chooser code above as well.
      */
+    public long timeStartAutonomous;
     @Override
     public void autonomousInit()
     {
 //        autoSelected = chooser.getSelected();
 //        // autoSelected = SmartDashboard.getString("Auto Selector", DEFAULT_AUTO);
 //        System.out.println("Auto selected: " + autoSelected);
+        timeStartAutonomous = System.currentTimeMillis();
     }
 
     /** This method is called periodically during autonomous. */
     @Override
     public void autonomousPeriodic() {
-        train.drive(0, -0.2, false); //hopefully we don't SLAM INTO A WALL
+//        long currentTime = System.currentTimeMillis();
+//        long timeSinceStarted = currentTime-timeStartAutonomous/1000;
+//        if(currentTime/1000 % 10 > 5){
+//        } else {
+//            train.drive(0,0, false);
+//
+//        }
+//        train.drive(0, 0.25, false); //hopefully we don't SLAM INTO A WALL
+        shootMotor1.set(1);
+        shootMotor2.set(1);
+        if(System.currentTimeMillis()-timeStartAutonomous > 500){
+            suckMotor.set(0.6);
+        }
     }
     
     
@@ -116,8 +128,8 @@ public class Robot extends TimedRobot
 //        updateSuckOrPull();
 
         double x_turningAxis = getStickAxisWithDeadZone(thrustMaster69Stick, 5, 0.075); //Z-Rotation
-        if(Math.abs(x_turningAxis) > 0) {
-            Logger.getGlobal().log(Level.INFO, "TURNING: " + Math.abs(x_turningAxis));
+        if(Math.abs(x_turningAxis) >= .90) { //it needs to be pulled far because it is too easy to do accidentally.
+            Logger.getGlobal().log(Level.INFO, "TURNING");
             train.turn(x_turningAxis, thrustMaster69Stick.getRawButton(1));
         }
         else{
@@ -136,13 +148,13 @@ public class Robot extends TimedRobot
 //        boolean canPushToGround = y_liftAxis < 0 && liftMotor1Encoder.getPosition() > -4.5 && liftMotor2Encoder.getPosition() > -10;
 //        boolean canPullUp = y_liftAxis > 0 && liftMotor1Encoder.getPosition() < -1 && liftMotor2Encoder.getPosition() < -1;
         if((tooFarForward.get() && y_liftAxis > 0)){
-            Logger.getGlobal().log(Level.WARNING, "TOO FAR FORWARD!");
+            Logger.getGlobal().log(Level.WARNING, "FORWARD LIMIT!");
             liftMotor1.set(0);
             liftMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
             return;
         }
         if((tooFarBack.get() && y_liftAxis < 0)){
-            Logger.getGlobal().log(Level.WARNING, "TOO FAR BACKWARD!");
+            Logger.getGlobal().log(Level.WARNING, "BACKWARD LIMIT!");
             liftMotor1.set(0);
             liftMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
             return;
@@ -156,20 +168,28 @@ public class Robot extends TimedRobot
         }
     }
     public void handleGrabbingAndShooting(){
-        double L_trigger = getStickAxisWithDeadZone(rockCandyStick, 2, 0.075);//0.0-1.0
-        double R_trigger = getStickAxisWithDeadZone(rockCandyStick, 3, 0.075);//0.0-1.0
-        if(L_trigger > 0){
+        double L_trigger = (rockCandyStick.getRawButton(9)) ? 1 : 0;//getStickAxisWithDeadZone(rockCandyStick, 2, 0.075);//0.0-1.0
+        double R_trigger = (rockCandyStick.getRawButton(10)) ? 1 : 0;//getStickAxisWithDeadZone(rockCandyStick, 3, 0.075);//0.0-1.0
+        boolean SHOOT_BACK_INTO_ROBOT = rockCandyStick.getRawButton(8);//rockCandyStick.getRawButton(6);//0.0-1.0
+        float MAX_SPEED = (rockCandyStick.getRawButton(1)) ? 0.5F : 1F;
+
+        if(L_trigger > 0){ //SUCK
             suckMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
-            suckMotor.set(-L_trigger);
+            suckMotor.set(0.4*MAX_SPEED); //too lazy to invert motor, lol
         } else {
             suckMotor.set(0);
         }
 
-        if(R_trigger > 0){
+
+        if(R_trigger > 0){ //SHOOT
             shootMotor1.setIdleMode(CANSparkBase.IdleMode.kCoast);
             shootMotor2.setIdleMode(CANSparkBase.IdleMode.kCoast);
-            shootMotor1.set(1.0); //always full speed when shooting
-            shootMotor2.set(1.0); //always full speed when shooting
+            /* always full speed when shooting */
+            shootMotor1.set(MAX_SPEED);
+            shootMotor2.set(MAX_SPEED);
+        } else if(SHOOT_BACK_INTO_ROBOT) { //lower the hoop back into the robot to get extra grab on it
+            shootMotor1.set(-MAX_SPEED);
+            shootMotor2.set(-MAX_SPEED);
         } else {
             shootMotor1.set(0);
             shootMotor2.set(0);
@@ -224,8 +244,7 @@ public class Robot extends TimedRobot
     /** This method is called periodically during test mode. */
     @Override
     public void testPeriodic() {
-        Logger.getGlobal().log(Level.INFO, "TOO_FAR_FORWARD: " + tooFarForward.get());
-        Logger.getGlobal().log(Level.INFO, "TOO_FAR_BACK: " + tooFarBack.get());
+        train.drive(0, 0.25, false);
     }
     
     
