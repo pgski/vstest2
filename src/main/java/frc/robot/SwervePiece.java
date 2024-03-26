@@ -2,7 +2,6 @@ package frc.robot;
 
 
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.RelativeEncoder;
@@ -12,14 +11,8 @@ public class SwervePiece {
     PIDController turningMotorPID = new PIDController(1.25, 0,0);
     public final CANSparkFlex driveMotor;
     public final CANSparkFlex turningMotor;
-//    public final RelativeEncoder turningEncoder;
     public final CANcoder turningEncoder;
     public final RelativeEncoder driveEncoder;
-    public boolean inverted;
-    public boolean drivingMotorInverted;
-    public int timeWhileFarAwayFromTargetWhileStopped = 0;
-    public int ticksDrivingInWrongDirection = 0;
-//    public final float MAX_WHEEL_ROTATION = 5.42F;
     public static final float FULL_REVOLUTION = 1F;//150F/7F; //original: 21.68F
 
     /**
@@ -30,11 +23,8 @@ public class SwervePiece {
      */
     public SwervePiece(int driveMotorChannel, int turningMotorChannel, int canCoderID, boolean inverted, boolean invertedDriving){
         driveMotor = new CANSparkFlex(driveMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
-//        driveEncoder = driveMotor.getEncoder();
         turningMotor = new CANSparkFlex(turningMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
         turningEncoder = new CANcoder(canCoderID);
-        this.inverted = inverted;
-        this.drivingMotorInverted = invertedDriving;
         driveEncoder = driveMotor.getEncoder();
     }
 
@@ -45,27 +35,20 @@ public class SwervePiece {
      */
     public void update(double desiredPosition, double drivingSpeed) {
         double motorPos = turningEncoder.getPosition().getValue() % FULL_REVOLUTION;
-        double velocity = turningMotorPID.calculate(motorPos, desiredPosition);
+
+        double rotationAngle = shortestRotation(desiredPosition, motorPos);
+        double velocity = turningMotorPID.calculate(rotationAngle, 0);
         turningMotor.set(-velocity);
 
-        double shortestDistanceFromTarget = calculateShortestDistanceFromTarget(motorPos, desiredPosition);
-        if(shortestDistanceFromTarget < 0.5){ //DON'T DRIVE IF THE WHEEL IS FACING THE WRONG DIRECTION
-            driveMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
-            driveMotor.set(drivingSpeed);
-        } else {
-            driveMotor.set(0);
-            driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
-        }
     }
-    /**
-     * This calculates the shortest distance the wheel needs to turn to reach its destination.
-     * Although seemingly unneeded with the PID controller, I have left this code in for stopping the wheels when they are in the wrong direction (until a native solution is found)
-    */
-    private double calculateShortestDistanceFromTarget(double motorPos, double desiredPosition) {
-        double turningMotorPos = Math.abs(motorPos); //the current position of the wheel turning motor
-        double distanceClockwise = ((turningMotorPos - desiredPosition) + FULL_REVOLUTION) % FULL_REVOLUTION; //distance the controller position and motor position is
-        double distanceCounterClockwise = FULL_REVOLUTION - distanceClockwise;
-
-        return Math.min(distanceClockwise, distanceCounterClockwise);
+    public static double shortestRotation(double targetDegrees, double currentDegrees) {
+        double difference = currentDegrees - targetDegrees;
+        if (difference > 180) {
+            difference -= 360;
+        }
+        if (difference < -180){
+            difference += 360;
+        }
+        return difference;
     }
 }
