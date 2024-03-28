@@ -10,6 +10,7 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -97,46 +98,19 @@ public class Robot extends TimedRobot
 
     /** This method is called periodically during autonomous. */
     @Override
-    public void autonomousPeriodic() {
-//        long currentTime = System.currentTimeMillis();
-//        long timeSinceStarted = currentTime-timeStartAutonomous/1000;
-//        if(currentTime/1000 % 10 > 5){
-//        } else {
-//            train.drive(0,0, false);
-//
-//        }
-//        train.drive(0, 0.25, false); //hopefully we don't SLAM INTO A WALL
-        shootMotor1.set(1);
-        shootMotor2.set(1);
-        if(System.currentTimeMillis()-timeStartAutonomous > 500){
-            suckMotor.set(0.6);
-        }
-    }
+    public void autonomousPeriodic() {}
     
     
     /** This method is called once when teleop is enabled. */
     @Override
     public void teleopInit() {}
 
-
     /** This method is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
-//        robotDrive.arcadeDrive(stick.getY(), stick.getX());
-//        driveWithJoystick(true);
-
-//        updateSuckOrPull();
-
         double x_turningAxis = getStickAxisWithDeadZone(thrustMaster69Stick, 5, 0.075); //Z-Rotation
-        if(Math.abs(x_turningAxis) >= .90) { //it needs to be pulled far because it is too easy to do accidentally.
-            Logger.getGlobal().log(Level.INFO, "TURNING");
-            train.turn(x_turningAxis, thrustMaster69Stick.getRawButton(1));
-        }
-        else{
-            Logger.getGlobal().log(Level.INFO, "DRIVING");
-            train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075), thrustMaster69Stick.getRawButton(1));
-        }
-
+        Logger.getGlobal().log(Level.INFO, "DRIVING");
+        train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075), thrustMaster69Stick.getRawButton(1));
         handleLiftingAndLowering();
         handleGrabbingAndShooting();
     }
@@ -207,24 +181,6 @@ public class Robot extends TimedRobot
         return Math.max(min, Math.min(max, val));
     }
 
-//    public void updateSuckOrPull(){
-//        double direction = stick.getRawAxis(SHOOT_STICK), speed;
-//        if(Math.abs(direction) > 0.1){
-//            firstMotor.set(direction);
-//            secondMotor.set(direction);
-//        } else {
-//            firstMotor.set(0);
-//            secondMotor.set(0);
-//        }
-//
-//        direction = stick.getRawAxis(PULL_STICK);
-//        if(Math.abs(direction) > 0.1){
-//            thirdMotor.set(direction);
-//        } else {
-//            thirdMotor.set(0);
-//        }
-////        new AnalogAccelerometer(5);
-//    }
 
     /** This method is called once when the robot is disabled. */
     @Override
@@ -243,9 +199,7 @@ public class Robot extends TimedRobot
     
     /** This method is called periodically during test mode. */
     @Override
-    public void testPeriodic() {
-        train.drive(0, 0.25, false);
-    }
+    public void testPeriodic() {}
     
     
     /** This method is called once when the robot is first started up. */

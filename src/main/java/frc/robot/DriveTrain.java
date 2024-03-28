@@ -8,10 +8,10 @@ import static frc.robot.SwervePiece.FULL_REVOLUTION;
 
 /** Represents a swerve drive style drivetrain. */
 public class DriveTrain {
-    private final SwervePiece frontRight = new SwervePiece(3, 4, 24, false, false);
-    private final SwervePiece frontLeft = new SwervePiece(5, 6, 26, false, false);
-    private final SwervePiece backLeft = new SwervePiece(7, 8, 28, false, false);
-    private final SwervePiece backRight = new SwervePiece(9, 10, 30, false, false);
+    private final SwervePiece frontRight = new SwervePiece(3, 4, 24);
+    private final SwervePiece frontLeft = new SwervePiece(5, 6, 26);
+    private final SwervePiece backLeft = new SwervePiece(7, 8, 28);
+    private final SwervePiece backRight = new SwervePiece(9, 10, 30);
     public final SwervePiece[][] swervePieces = {
             {frontLeft, frontRight},
             {backLeft, backRight}
@@ -29,26 +29,9 @@ public class DriveTrain {
 
         for (SwervePiece[] swerveRow : swervePieces)
             for (SwervePiece swervePiece : swerveRow)
-                swervePiece.update(desiredPosition, -drivingSpeed);
-//        swervePieces[0][0].update(desiredPosition, drivingSpeed);
+                swervePiece.update(desiredPosition, drivingSpeed);
     }
-    /**
-     * Method to turn the robot using joystick info.
-     *
-     * @param xPull Speed of the robot in the x direction (sideways).
-     */
-    public void turn(double xPull, boolean slow) {
-        double desiredRotation = -FULL_REVOLUTION*0.25; //make wheels sideways
-        double drivingSpeed = xPull * ((slow) ? 0.5 : 1);
-        for(SwervePiece swervePiece : swervePieces[0]) {
-            swervePiece.update(desiredRotation, drivingSpeed);
-        }
-//        drivingSpeed = -drivingSpeed;
-        desiredRotation = (desiredRotation-FULL_REVOLUTION/2);
-        for(SwervePiece swervePiece : swervePieces[1]) {
-            swervePiece.update(desiredRotation, drivingSpeed);
-        }
-    }
+
     /**
      * @return angle in negative degrees (0 - 359.99)
      */

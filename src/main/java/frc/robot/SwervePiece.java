@@ -1,7 +1,6 @@
 package frc.robot;
 
 
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.RelativeEncoder;
@@ -9,39 +8,42 @@ import edu.wpi.first.math.controller.PIDController;
 
 public class SwervePiece {
     PIDController turningMotorPID = new PIDController(1.25, 0,0);
-    public final CANSparkFlex driveMotor;
-    public final CANSparkFlex turningMotor;
-    public final CANcoder turningEncoder;
-    public final RelativeEncoder driveEncoder;
-    public static final float FULL_REVOLUTION = 1F;//150F/7F; //original: 21.68F
+    public static final float FULL_REVOLUTION = 150F/7F; //original: 21.68F
+    private final CANSparkFlex driveMotor;
+    private final CANSparkFlex turningMotor;
+    private final RelativeEncoder driveEncoder;
+    private final RelativeEncoder turningEncoder;
 
-    /**
-     * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
-     *
-     * @param driveMotorChannel PWM output for the drive motor.
-     * @param turningMotorChannel PWM output for the turning motor.
-     */
-    public SwervePiece(int driveMotorChannel, int turningMotorChannel, int canCoderID, boolean inverted, boolean invertedDriving){
+    public SwervePiece(int driveMotorChannel, int turningMotorChannel, int canCoderID){
         driveMotor = new CANSparkFlex(driveMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
         turningMotor = new CANSparkFlex(turningMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
-        turningEncoder = new CANcoder(canCoderID);
+        turningEncoder = turningMotor.getEncoder();
         driveEncoder = driveMotor.getEncoder();
     }
 
-    /**
-     * Updates the SwervePiece's turning motor and driving motor to move in the direction xPull and yPull requests.
-     * @param desiredPosition The desired number along FULL_ROTATION the encoder modulus FULL_ROTATION wants to be at
-     * @param drivingSpeed Speed the robot drives
-     */
+    //runs the module
     public void update(double desiredPosition, double drivingSpeed) {
-        double motorPos = turningEncoder.getPosition().getValue() % FULL_REVOLUTION;
-
-        double rotationAngle = shortestRotation(desiredPosition, motorPos);
-        double velocity = turningMotorPID.calculate(rotationAngle, 0);
+        //turningMotor
+        double motorPos = turningEncoder.getPosition() % FULL_REVOLUTION;
+        double distanceToAngle = distanceToAngle(desiredPosition, motorPos);
+        double velocity = turningMotorPID.calculate(distanceToAngle, 0);
         turningMotor.set(-velocity);
 
+        //drivingMotor
+        driveMotor(distanceToAngle, drivingSpeed);
     }
-    public static double shortestRotation(double targetDegrees, double currentDegrees) {
+
+    //only drives motor when close to desired position
+    private void driveMotor(double distanceToAngle, double drivingSpeed) {
+        if (Math.abs(distanceToAngle) > 5) {
+            driveMotor.set(0);
+        } else {
+            driveMotor.set(drivingSpeed);
+        }
+    }
+
+    //finds the rotation need the set angle + the closest rotation
+    private static double distanceToAngle(double targetDegrees, double currentDegrees) {
         double difference = currentDegrees - targetDegrees;
         if (difference > 180) {
             difference -= 360;
