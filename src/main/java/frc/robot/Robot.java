@@ -110,7 +110,7 @@ public class Robot extends TimedRobot
     public void teleopPeriodic() {
         double x_turningAxis = getStickAxisWithDeadZone(thrustMaster69Stick, 5, 0.075); //Z-Rotation
         Logger.getGlobal().log(Level.INFO, "DRIVING");
-        train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075), thrustMaster69Stick.getRawButton(1));
+        train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 2, 0.075) ,thrustMaster69Stick.getRawButton(1));
         handleLiftingAndLowering();
         handleGrabbingAndShooting();
     }

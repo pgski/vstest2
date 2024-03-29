@@ -7,6 +7,10 @@ import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.controller.PIDController;
 
 public class SwervePiece {
+
+    private final int distanceBetweenLeftRightWheels = 10;
+    private final int distanceBetweenFrontBackWheels = 20;
+    private final int swerveID = 0;
     PIDController turningMotorPID = new PIDController(1.25, 0,0);
     public static final float FULL_REVOLUTION = 150F/7F; //original: 21.68F
     private final CANSparkFlex driveMotor;
@@ -14,11 +18,19 @@ public class SwervePiece {
     private final RelativeEncoder driveEncoder;
     private final RelativeEncoder turningEncoder;
 
-    public SwervePiece(int driveMotorChannel, int turningMotorChannel, int canCoderID){
+    public SwervePiece(int driveMotorChannel, int turningMotorChannel, int swerveID){
         driveMotor = new CANSparkFlex(driveMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
         turningMotor = new CANSparkFlex(turningMotorChannel, CANSparkLowLevel.MotorType.kBrushless);
         turningEncoder = turningMotor.getEncoder();
         driveEncoder = driveMotor.getEncoder();
+        swerveID = this.swerveID;
+    }
+
+    //gets the radius of the circle to calculate turn angle
+    private int getRadius(int distanceBetweenLeftRightWheels, int distanceBetweenFrontBackWheels) {
+        if (distanceBetweenLeftRightWheels > distanceBetweenFrontBackWheels) {
+            return distanceBetweenLeftRightWheels/2;
+        } else return distanceBetweenFrontBackWheels/2;
     }
 
     //runs the module
