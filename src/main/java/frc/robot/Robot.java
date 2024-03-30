@@ -10,7 +10,6 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,25 +23,9 @@ import java.util.logging.Logger;
  */
 public class Robot extends TimedRobot
 {
-    private static final String DEFAULT_AUTO = "Default";
-    private static final String CUSTOM_AUTO = "My Auto";
-    private String autoSelected;
-//    private final SendableChooser<String> chooser = new SendableChooser<>();
-//    private final XboxController m_controller = new XboxController(0);
-//    private final Drivetrain m_swerve = new Drivetrain();
-
-    // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0 to 1.
-//    private final SlewRateLimiter m_xspeedLimiter = new SlewRateLimiter(3);
-//    private final SlewRateLimiter m_yspeedLimiter = new SlewRateLimiter(3);
-//    private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
-//    private final CANSparkMax firstMotor = new CANSparkMax(1, CANSparkLowLevel.MotorType.kBrushless);
-//    private final CANSparkMax secondMotor = new CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushless);
-//    private final CANSparkMax thirdMotor = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushless);
-//    private final DifferentialDrive robotDrive = new DifferentialDrive(firstMotor, secondMotor);
-    private final DriveTrain train = new DriveTrain();
+    private final DriveTrain Drivetrain = new DriveTrain();
     private static final Joystick rockCandyStick = new Joystick(0);
     private static final Joystick thrustMaster69Stick = new Joystick(1);
-//    private static final AnalogGyro gyro = new AnalogGyro(0);
     public static final CANSparkMax liftMotor1 = new CANSparkMax(11, CANSparkMax.MotorType.kBrushless);
     public static final CANSparkMax suckMotor = new CANSparkMax(13, CANSparkBase.MotorType.kBrushless);
     public static final CANSparkMax shootMotor1 = new CANSparkMax(14, CANSparkBase.MotorType.kBrushless);
@@ -57,9 +40,6 @@ public class Robot extends TimedRobot
     @Override
     public void robotInit()
     {
-//        chooser.setDefaultOption("Default Auto", DEFAULT_AUTO);
-//        chooser.addOption("My Auto", CUSTOM_AUTO);
-//        SmartDashboard.putData("Auto choices", chooser);
         shootMotor1.setInverted(true);
         suckMotor.setInverted(true);
     }
@@ -86,15 +66,8 @@ public class Robot extends TimedRobot
      * below with additional strings. If using the SendableChooser, make sure to add them to the
      * chooser code above as well.
      */
-    public long timeStartAutonomous;
     @Override
-    public void autonomousInit()
-    {
-//        autoSelected = chooser.getSelected();
-//        // autoSelected = SmartDashboard.getString("Auto Selector", DEFAULT_AUTO);
-//        System.out.println("Auto selected: " + autoSelected);
-        timeStartAutonomous = System.currentTimeMillis();
-    }
+    public void autonomousInit() {}
 
     /** This method is called periodically during autonomous. */
     @Override
@@ -110,7 +83,7 @@ public class Robot extends TimedRobot
     public void teleopPeriodic() {
         double x_turningAxis = getStickAxisWithDeadZone(thrustMaster69Stick, 5, 0.075); //Z-Rotation
         Logger.getGlobal().log(Level.INFO, "DRIVING");
-        train.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 2, 0.075) ,thrustMaster69Stick.getRawButton(1));
+        Drivetrain.drive(getStickAxisWithDeadZone(thrustMaster69Stick, 0, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 1, 0.075), getStickAxisWithDeadZone(thrustMaster69Stick, 5, 0.075) ,thrustMaster69Stick.getRawButton(1));
         handleLiftingAndLowering();
         handleGrabbingAndShooting();
     }

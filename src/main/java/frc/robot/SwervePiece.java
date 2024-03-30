@@ -12,7 +12,7 @@ public class SwervePiece {
     private final int distanceBetweenFrontBackWheels = 20;
     private final int swerveID = 0;
     PIDController turningMotorPID = new PIDController(1.25, 0,0);
-    public static final float FULL_REVOLUTION = 150F/7F; //original: 21.68F
+    public static final float FULL_REVOLUTION = 150F/7F;
     private final CANSparkFlex driveMotor;
     private final CANSparkFlex turningMotor;
     private final RelativeEncoder driveEncoder;
@@ -27,25 +27,21 @@ public class SwervePiece {
     }
 
     //gets the radius of the circle to calculate turn angle
-    private int getRadius(int distanceBetweenLeftRightWheels, int distanceBetweenFrontBackWheels) {
-        if (distanceBetweenLeftRightWheels > distanceBetweenFrontBackWheels) {
-            return distanceBetweenLeftRightWheels/2;
-        } else return distanceBetweenFrontBackWheels/2;
-    }
-
     //runs the module
+
     public void update(double desiredPosition, double drivingSpeed) {
         //turningMotor
         double motorPos = turningEncoder.getPosition() % FULL_REVOLUTION;
         double distanceToAngle = distanceToAngle(desiredPosition, motorPos);
+        turningEncoder.setPosition(3);
         double velocity = turningMotorPID.calculate(distanceToAngle, 0);
         turningMotor.set(-velocity);
 
         //drivingMotor
         driveMotor(distanceToAngle, drivingSpeed);
     }
-
     //only drives motor when close to desired position
+
     private void driveMotor(double distanceToAngle, double drivingSpeed) {
         if (Math.abs(distanceToAngle) > 5) {
             driveMotor.set(0);
@@ -53,8 +49,8 @@ public class SwervePiece {
             driveMotor.set(drivingSpeed);
         }
     }
-
     //finds the rotation need the set angle + the closest rotation
+
     private static double distanceToAngle(double targetDegrees, double currentDegrees) {
         double difference = currentDegrees - targetDegrees;
         if (difference > 180) {
